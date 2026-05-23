@@ -43,16 +43,28 @@ def fingrid_pipeline():
         return fingrid_extract.fetch_consumption(fingrid_data_date, os.environ["FINGRID_API_KEY"])
 
     @task
-    def load_to_snowflake(rows):
+    def load_to_snowflake(rows, data_interval_start=None):
         # SnowflakeHook uses the `snowflake_default` connection from airflow_settings.yaml
         # so credentials stay out of the DAG. It also handles connect/insert/commit/close.
         hook = SnowflakeHook(snowflake_conn_id=SNOWFLAKE_CONN_ID)
+
+        # Skip if we already have rows for this date - keeps re-runs idempotent.
+        dag_run_date = data_interval_start.date()
+        fingrid_data_date = dag_run_date - datetime.timedelta(days=FINGRID_PUBLISH_LAG_DAYS)
+        existing = hook.get_first(
+            f"SELECT count(*) FROM raw.fingrid.consumption "
+            f"WHERE date(start_time) = '{fingrid_data_date}'"
+        )[0]
+        if existing > 0:
+            print(f"Found {existing} existing rows for {fingrid_data_date}, skipping load")
+            return
+
         hook.insert_rows(
             table="raw.fingrid.consumption",
             rows=rows,
             target_fields=("dataset_id", "start_time", "end_time", "value"),
         )
-        print(f"Loaded {len(rows)} rows into raw.fingrid.consumption")
+        print(f"Loaded {len(rows)} rows into raw.fingrid.consumption for {fingrid_data_date}")
 
     # Fresh shallow clone of main on every run - no state drift between
     # local dev copy and what Airflow actually executes.
@@ -64,7 +76,7 @@ def fingrid_pipeline():
     dbt_run = BashOperator(
         task_id="dbt_run",
         cwd=DBT_CHECKOUT_DIR,
-        bash_command=f"dbt run --profiles-dir {DBT_PROFILES_DIR}",
+        bash_command=f"dbt run --select tag:fingrid --profiles-dir {DBT_PROFILES_DIR}",
     )
 
     # Build tasks. load_to_snowflake(extract_task) passes extract's rows via XCom.
