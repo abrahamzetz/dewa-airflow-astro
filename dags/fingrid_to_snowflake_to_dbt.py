@@ -66,17 +66,16 @@ def fingrid_pipeline():
         )
         print(f"Loaded {len(rows)} rows into raw.fingrid.consumption for {fingrid_data_date}")
 
-    # Fresh shallow clone of main on every run - no state drift between
-    # local dev copy and what Airflow actually executes.
-    git_clone_dbt = BashOperator(
-        task_id="git_clone_dbt",
-        bash_command=f"rm -rf {DBT_CHECKOUT_DIR} && git clone --depth 1 {DBT_REPO_URL} {DBT_CHECKOUT_DIR}",
-    )
-
+    # Fresh shallow clone of main, then dbt run. Combined into one task so
+    # the cloned directory doesn't have to survive across task boundaries.
     dbt_run = BashOperator(
         task_id="dbt_run",
-        cwd=DBT_CHECKOUT_DIR,
-        bash_command=f"dbt run --select tag:fingrid --profiles-dir {DBT_PROFILES_DIR}",
+        bash_command=(
+            f"rm -rf {DBT_CHECKOUT_DIR} && "
+            f"git clone --depth 1 {DBT_REPO_URL} {DBT_CHECKOUT_DIR} && "
+            f"cd {DBT_CHECKOUT_DIR} && "
+            f"dbt run --select tag:fingrid --profiles-dir {DBT_PROFILES_DIR}"
+        ),
     )
 
     # Build tasks. load_to_snowflake(extract_task) passes extract's rows via XCom.
@@ -84,7 +83,7 @@ def fingrid_pipeline():
     load_task = load_to_snowflake(extract_task)
 
     # Chain order
-    extract_task >> load_task >> git_clone_dbt >> dbt_run
+    extract_task >> load_task >> dbt_run
 
 
 fingrid_pipeline()
