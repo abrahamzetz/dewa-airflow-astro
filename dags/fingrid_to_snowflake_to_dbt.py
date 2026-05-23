@@ -74,6 +74,7 @@ def fingrid_pipeline():
             f"rm -rf {DBT_CHECKOUT_DIR} && "
             f"git clone --depth 1 {DBT_REPO_URL} {DBT_CHECKOUT_DIR} && "
             f"cd {DBT_CHECKOUT_DIR} && "
+            f"dbt deps && "  # install dbt deps before the run
             f"dbt run --select tag:fingrid --profiles-dir {DBT_PROFILES_DIR}"
         ),
     )
