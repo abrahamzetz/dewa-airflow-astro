@@ -15,7 +15,8 @@ from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
 
 from include import fingrid_extract
 
-DBT_REPO_URL = "https://github.com/abrahamzetz/dewa-dbt-demo"
+# Set DBT_REPO_URL in .env to point at your own dbt project on GitHub.
+DBT_REPO_URL = os.environ["DBT_REPO_URL"]
 DBT_CHECKOUT_DIR = "/tmp/dbt"
 DBT_PROFILES_DIR = "/usr/local/airflow/include/dbt-profiles"
 SNOWFLAKE_CONN_ID = "snowflake_default"

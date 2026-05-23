@@ -6,7 +6,7 @@ The DAG `fingrid_to_snowflake_to_dbt`:
 
 1. **Extract** — pull a day of electricity consumption from the Fingrid API.
 2. **Load** — write rows into `raw.fingrid.consumption` in Snowflake.
-3. **dbt run** — shallow-clone the latest `main` of [dewa-dbt-demo](https://github.com/abrahamzetz/dewa-dbt-demo) into `/tmp/dbt`, then run dbt against it.
+3. **dbt run** — shallow-clone the latest `main` of your dbt project (set via `DBT_REPO_URL` in `.env`) into `/tmp/dbt`, then run dbt against it.
 
 Cloning fresh on every run means whatever's on `main` is what gets executed — no state drift between a local dbt copy and Airflow.
 
@@ -42,9 +42,13 @@ Create `.env` in the project root:
 
 ```sh
 FINGRID_API_KEY=<your-fingrid-key>
+DBT_REPO_URL=https://github.com/<your-user>/<your-dbt-repo>
 ```
 
-Astro loads this into the running containers. The DAG reads it via `os.environ["FINGRID_API_KEY"]`.
+- `FINGRID_API_KEY` — your Fingrid API key. Get one at https://data.fingrid.fi (free, requires sign-up).
+- `DBT_REPO_URL` — public GitHub URL of the dbt project you want the DAG to clone and run. Each student should point this at their own repo.
+
+Astro loads this into the running containers. The DAG reads both via `os.environ` — if either is missing, the DAG will fail to parse with a clear `KeyError`.
 
 #### `airflow_settings.yaml`
 
@@ -89,11 +93,11 @@ default:
       threads: 4
 ```
 
-The top-level key (`default`) must match `profile:` in the `dbt_project.yml` of [dewa-dbt-demo](https://github.com/abrahamzetz/dewa-dbt-demo). The DAG's `dbt_run` task points `--profiles-dir` at this folder.
+The top-level key (`default` in the template above) must match `profile:` in your dbt project's `dbt_project.yml`. The DAG's `dbt_run` task points `--profiles-dir` at this folder.
 
 ### 4. (Optional) Local dbt working copy
 
-The DAG clones `dewa-dbt-demo` from GitHub on every run, so you don't need a local copy in this project. If you're developing the dbt project, keep your working copy anywhere outside `airflow-astro/` (it's its own git repo), push to `main`, and the next DAG run picks it up.
+The DAG clones your dbt project (`DBT_REPO_URL` in `.env`) from GitHub on every run, so you don't need a local copy in this project. If you're developing the dbt project, keep your working copy anywhere outside `airflow-astro/`, push to `main`, and the next DAG run picks it up.
 
 ---
 
@@ -152,4 +156,4 @@ airflow-astro/
         └── profiles.yml              # Snowflake conn for dbt (gitignored)
 ```
 
-The dbt project itself isn't stored in this repo — `dbt_run` fetches the latest `main` of [dewa-dbt-demo](https://github.com/abrahamzetz/dewa-dbt-demo) into `/tmp/dbt` inside the container on every DAG run.
+The dbt project itself isn't stored in this repo — `dbt_run` fetches the latest `main` of whatever repo `DBT_REPO_URL` points at into `/tmp/dbt` inside the container on every DAG run.
