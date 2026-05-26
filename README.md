@@ -32,7 +32,7 @@ Otherwise follow the install instructions in the Astro docs above for your platf
 
 Astro CLI runs Airflow inside local Docker containers, so Docker has to be installed and running before `astro dev start` will work.
 
-Download from https://www.docker.com/products/docker-desktop/ and launch it once so the Docker engine is running in the background.
+Install from https://docs.docker.com/desktop/ and launch it once so the Docker engine is running in the background. Just open the app and don't touch anything there.
 
 ### 3. Create the Snowflake target
 
