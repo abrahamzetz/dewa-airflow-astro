@@ -95,10 +95,6 @@ default:
 
 The top-level key (`default` in the template above) must match `profile:` in your dbt project's `dbt_project.yml`. The DAG's `dbt_run` task points `--profiles-dir` at this folder.
 
-### 4. (Optional) Local dbt working copy
-
-The DAG clones your dbt project (`DBT_REPO_URL` in `.env`) from GitHub on every run, so you don't need a local copy in this project. If you're developing the dbt project, keep your working copy anywhere outside `airflow-astro/`, push to `main`, and the next DAG run picks it up.
-
 ---
 
 ## Running the demo
@@ -107,7 +103,7 @@ The DAG clones your dbt project (`DBT_REPO_URL` in `.env`) from GitHub on every 
 astro dev start
 ```
 
-Then `http://localhost:8080` (login `admin` / `admin`):
+Open the Airflow UI URL printed in the terminal (e.g. `http://airflow-astro.localhost:<port>`):
 
 1. Unpause `fingrid_to_snowflake_to_dbt`.
 2. Trigger a run manually.
@@ -121,18 +117,6 @@ To stop:
 ```sh
 astro dev stop
 ```
-
----
-
-## Talking points during the demo
-
-- "This DAG is exactly what we drew on the whiteboard: extract, load, transform."
-- Point at `extract_from_fingrid` — "this is the Python you saw in the batch session, wrapped as an Airflow task."
-- Point at `dbt_run` — "this is just a BashOperator calling `dbt run` — Airflow doesn't care that it's dbt."
-- Show the schedule (`@daily`) — "this would run by itself every night without us touching it."
-- Show a failed run if you have time — break the API key, re-trigger, walk through the log.
-
----
 
 ## Folder layout
 
