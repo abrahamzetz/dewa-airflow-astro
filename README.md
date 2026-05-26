@@ -28,11 +28,17 @@ brew install astro
 
 Otherwise follow the install instructions in the Astro docs above for your platform.
 
-### 2. Create the Snowflake target
+### 2. Install Docker Desktop
+
+Astro CLI runs Airflow inside local Docker containers, so Docker has to be installed and running before `astro dev start` will work.
+
+Download from https://www.docker.com/products/docker-desktop/ and launch it once so the Docker engine is running in the background.
+
+### 3. Create the Snowflake target
 
 Run `include/snowflake_setup.sql` once in a Snowflake worksheet. It creates `raw.fingrid` schema and the `consumption` table.
 
-### 3. Create credential files
+### 4. Create credential files
 
 All three credential files are gitignored, so after cloning this repo you need to create them yourself. Rotate the Snowflake password after the demo as a final safety net.
 
